@@ -70,15 +70,23 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
       );
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        print(responseData);
         // For each artifact, add it to the list of artifacts of the corresponding attribute
-        for (var obj in responseData) {
-          if (obj.containsKey("value") && obj.containsKey("artifact")) {
-            var value = obj["value"];
-            var artifact = Artifact.fromJson(obj["artifact"]);
-            artifacts[artifact.attribute].add(artifact);
-          } else {
-            print("Unexpected response format.");
+        for (var artifact in artifacts) {
+          artifact.clear();
+        }
+        for (var i = 0; i < 6; i++) {
+          for (var k = 0; k < Artifact.attributeStrings.length; k++) {
+            for (var m = 0; m < size; m++) {
+              var currArtifact = responseData[i][k][m];
+              if (currArtifact.containsKey("value") &&
+                  currArtifact.containsKey("artifact")) {
+                var value = currArtifact["value"];
+                var artifact = Artifact.fromJson(currArtifact);
+                artifacts[artifact.attribute].add(artifact);
+              } else {
+                print("Unexpected response format.");
+              }
+            }
           }
         }
       } else {
@@ -187,6 +195,14 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
             label: displayArtifactIcon(attribute, 16) ?? const Text('NA')));
       }
       // File the rows with the artifacts
+      if (artifacts[attribute].isEmpty) {
+        return DataTable(
+          columns: columns,
+          rows: const [],
+          headingRowColor:
+              MaterialStateColor.resolveWith((states) => Colors.grey.shade400),
+        );
+      }
       return DataTable(
         columns: columns,
         rows: List.generate(
