@@ -247,8 +247,8 @@ class Artifact:
     }
 
     ATTRIBUTE_STRINGS = {
-        1: "Fire",
-        2: "Water",
+        1: "Water",
+        2: "Fire",
         3: "Wind",
         4: "Light",
         5: "Dark",
