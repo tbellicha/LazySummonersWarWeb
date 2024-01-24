@@ -104,8 +104,9 @@ class MyFile {
           'artifacts': [],
         };
       }
-    } catch (e) {
+    } catch (e, stacktrace) {
       print('loadFileContent: ${e.toString()}');
+      print(stacktrace);
       return {
         'score': 0,
         'runes': [],

@@ -45,8 +45,9 @@ class _MyHomePageState extends State<MyHomePage> {
         // Handle the error case if needed
         print('Request failed with status: ${response.statusCode}.');
       }
-    } catch (e) {
+    } catch (e, stacktrace) {
       print('_updateSets: ${e.toString()}');
+      print(stacktrace);
     }
   }
 
