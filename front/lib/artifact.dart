@@ -1,5 +1,5 @@
 class ArtifactsInfo {
-  late final List<int> attributes; // Fire, Water, Wind, Light, Dark
+  late final List<int> attributes; // Water, Fire, Wind, Light, Dark
   late final List<int> mainStats; // HP, ATK, DEF
   late final List<int> unitStyles; // Attack, Defense, Support, HP
 
@@ -11,13 +11,13 @@ class ArtifactsInfo {
 }
 
 class Artifact {
-  int rid;
+  double rid;
   int slot;
   int type;
   int attribute;
   int unitStyle;
   List<int> priEffects;
-  List<List<int>> secEffects;
+  List<List<double>> secEffects;
 
   Artifact({
     required this.rid,
@@ -56,15 +56,15 @@ class Artifact {
 
   static Artifact fromJson(Map<String, dynamic> artifactData) {
     try {
-      int rid = artifactData['rid'];
+      double rid = artifactData['rid'];
       int slot = artifactData['slot'];
       int type = artifactData['type'];
       int attribute = artifactData['attribute'];
       int unitStyle = artifactData['unit_style'];
       List<int> priEffects = List<int>.from(artifactData['pri_effects']);
-      List<List<int>> secEffects = List<List<int>>.from(
+      List<List<double>> secEffects = List<List<double>>.from(
         (artifactData['sec_effects'] as List).map(
-          (item) => List<int>.from(item),
+          (item) => List<double>.from(item),
         ),
       );
 
@@ -77,8 +77,9 @@ class Artifact {
         priEffects: priEffects,
         secEffects: secEffects,
       );
-    } catch (e) {
-      print('Artifact.fromJson: ${e.toString()}');
+    } catch (e, stacktrace) {
+      print('Artifact.fromJson: ${e.toString()} ($artifactData)');
+      print(stacktrace);
       return Artifact(
         rid: -1,
         slot: -1,
@@ -106,8 +107,8 @@ class Artifact {
   };
 
   static final Map<int, String> attributeStrings = {
-    1: "Fire",
-    2: "Water",
+    1: "Water",
+    2: "Fire",
     3: "Wind",
     4: "Light",
     5: "Dark",
