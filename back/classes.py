@@ -210,7 +210,7 @@ class Artifact:
         attribute_str = Artifact.ATTRIBUTE_STRINGS.get(
             self.attribute, "Unknown Attribute"
         )
-        uni_type_str = Artifact.UNIT_TYPE_STRINGS.get(
+        uni_type_str = Artifact.UNIT_STYLES_STRINGS.get(
             self.unit_style, f"Unknown Unit Type: {self.unit_style}"
         )
 
@@ -255,7 +255,7 @@ class Artifact:
         98: "Intangible",
     }
 
-    UNIT_TYPE_STRINGS = {
+    UNIT_STYLES_STRINGS = {
         1: "Attack",
         2: "Defense",
         3: "HP",
