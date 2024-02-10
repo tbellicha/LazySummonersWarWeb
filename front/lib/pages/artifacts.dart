@@ -20,6 +20,7 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
   int selectedMainStat = 0;
   Map<int, List<dynamic>> artifactsDRF = {};
   Map<int, List<dynamic>> artifactsDDO = {};
+  Map<int, List<dynamic>> artifactsCDS3 = {};
   Map<dynamic, Map<int, List<dynamic>>> savedArtifacts = {};
   int size = 4;
   List<double> idsDDO = [
@@ -35,6 +36,11 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
     307,
     308,
     309,
+  ];
+  List<double> idsCDS3 = [
+    400,
+    401,
+    402,
   ];
   Map<String, List<double>> minMaxValues = {
     'DDO': [17, 17],
@@ -63,6 +69,16 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
     ).then(
       (value) => setState(() {
         artifactsDDO = value;
+      }),
+    );
+    getBestArtifacts(
+      idsCDS3,
+      type: Artifact.artifactTypeStrings.values.toList().indexOf("Unit Style") +
+          1,
+      mainStat: selectedMainStat,
+    ).then(
+      (value) => setState(() {
+        artifactsCDS3 = value;
       }),
     );
   }
@@ -119,7 +135,7 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
     return {};
   }
 
-  Widget displayAttributeArtifacts(
+  Widget displayHeaderAndDatas(
       Map<int, List<dynamic>> artifacts, List<double> minMaxValues) {
     List<DropdownMenuItem> mainStatsItem = [];
     mainStatsItem.add(
@@ -137,65 +153,58 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
     return Column(
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Column(
-              children: [
-                const Text(
-                  'Main Stat',
-                  style: TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-                DropdownButton(
-                  items: mainStatsItem,
-                  value: selectedMainStat,
-                  alignment: Alignment.center,
-                  onChanged: (value) {
-                    setState(() {
-                      selectedMainStat = value;
-                      if (savedArtifacts[selectedMainStat] != null) {
-                        artifacts = savedArtifacts[selectedMainStat]!;
-                      } else {
-                        getBestArtifacts(
-                          idsDRF,
-                          type: Artifact.artifactTypeStrings.values
-                                  .toList()
-                                  .indexOf("Attribute") +
-                              1,
-                          mainStat: selectedMainStat,
-                        ).then((value) {
-                          setState(() {
-                            artifactsDRF = value;
-                          });
-                        });
-                        getBestArtifacts(
-                          idsDDO,
-                          type: Artifact.artifactTypeStrings.values
-                                  .toList()
-                                  .indexOf("Attribute") +
-                              1,
-                          mainStat: selectedMainStat,
-                        ).then((value) {
-                          setState(() {
-                            artifactsDDO = value;
-                          });
-                        });
-                      }
+            const Text(
+              'Main Stat',
+              style: TextStyle(
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(width: 8),
+            DropdownButton(
+              items: mainStatsItem,
+              value: selectedMainStat,
+              alignment: Alignment.center,
+              onChanged: (value) {
+                setState(() {
+                  selectedMainStat = value;
+                  if (savedArtifacts[selectedMainStat] != null) {
+                    artifacts = savedArtifacts[selectedMainStat]!;
+                  } else {
+                    getBestArtifacts(
+                      idsDRF,
+                      type: Artifact.artifactTypeStrings.values
+                              .toList()
+                              .indexOf("Attribute") +
+                          1,
+                      mainStat: selectedMainStat,
+                    ).then((value) {
+                      setState(() {
+                        artifactsDRF = value;
+                      });
                     });
-                  },
-                ),
-              ],
+                    getBestArtifacts(
+                      idsDDO,
+                      type: Artifact.artifactTypeStrings.values
+                              .toList()
+                              .indexOf("Attribute") +
+                          1,
+                      mainStat: selectedMainStat,
+                    ).then((value) {
+                      setState(() {
+                        artifactsDDO = value;
+                      });
+                    });
+                  }
+                });
+              },
             ),
           ],
         ),
         createArtifactTables(artifacts, minMaxValues),
       ],
     );
-  }
-
-  Widget displayUnitStyleArtifacts() {
-    return const Text('Type Artifacts');
   }
 
   Widget? displayAttributeIcon(int attribute, double size) {
@@ -244,10 +253,8 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
       for (var attribute in artifactsInfo.attributes) {
         columns.add(
           DataColumn(
-            label: Expanded(
-              child: Center(
-                child: displayAttributeIcon(attribute, 16) ?? const Text('NA'),
-              ),
+            label: Center(
+              child: displayAttributeIcon(attribute, 16) ?? const Text('NA'),
             ),
           ),
         );
@@ -361,11 +368,11 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
       );
 
       return SizedBox(
-        height: 1000,
+        height: 200 * size as double,
         child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            mainAxisExtent: 320,
+            mainAxisExtent: 100 * size as double,
           ),
           itemCount: artifactsInfo.attributes.length,
           itemBuilder: (BuildContext context, int index) {
@@ -386,6 +393,48 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
       print(stacktrace);
       return const SizedBox();
     }
+  }
+
+  Widget displayAttributeArtifact() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const Text(
+            "Damage Received From",
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          displayHeaderAndDatas(artifactsDRF, minMaxValues['DRF']!),
+          const Text(
+            "Damage Dealt On",
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          displayHeaderAndDatas(artifactsDDO, minMaxValues['DDO']!),
+        ],
+      ),
+    );
+  }
+
+  Widget displayUnitStyleArtifacts() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const Text(
+            "Crit Damage S3",
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          displayHeaderAndDatas(artifactsCDS3, minMaxValues['DRF']!),
+        ],
+      ),
+    );
   }
 
   @override
@@ -410,30 +459,7 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
             Expanded(
               child: TabBarView(
                 children: [
-                  SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        const Text(
-                          "Damage Received From",
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        displayAttributeArtifacts(
-                            artifactsDRF, minMaxValues['DRF']!),
-                        const Text(
-                          "Damage Dealt On",
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        displayAttributeArtifacts(
-                            artifactsDDO, minMaxValues['DDO']!),
-                      ],
-                    ),
-                  ),
+                  displayAttributeArtifact(),
                   displayUnitStyleArtifacts(),
                 ],
               ),
