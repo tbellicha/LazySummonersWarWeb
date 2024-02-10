@@ -18,63 +18,59 @@ class ArtifactDisplay extends StatefulWidget {
 
 class _ArtifactDisplayState extends State<ArtifactDisplay> {
   int selectedMainStat = 0;
-  Map<int, List<dynamic>> artifacts = {};
+  Map<int, List<dynamic>> artifactsDRF = {};
+  Map<int, List<dynamic>> artifactsDDO = {};
   Map<dynamic, Map<int, List<dynamic>>> savedArtifacts = {};
   int size = 4;
+  List<double> idsDDO = [
+    300,
+    301,
+    302,
+    303,
+    304,
+  ];
+  List<double> idsDRF = [
+    305,
+    306,
+    307,
+    308,
+    309,
+  ];
+  Map<String, List<double>> minMaxValues = {
+    'DDO': [17, 17],
+    'DRF': [22, 22],
+  };
+  double minMaxDelta = 2;
 
   @override
   void initState() {
     super.initState();
     getBestArtifacts(
-      [
-        305,
-        306,
-        307,
-        308,
-        309,
-      ],
+      idsDRF,
       type:
           Artifact.artifactTypeStrings.values.toList().indexOf("Attribute") + 1,
       mainStat: selectedMainStat,
+    ).then(
+      (value) => setState(() {
+        artifactsDRF = value;
+      }),
+    );
+    getBestArtifacts(
+      idsDDO,
+      type:
+          Artifact.artifactTypeStrings.values.toList().indexOf("Attribute") + 1,
+      mainStat: selectedMainStat,
+    ).then(
+      (value) => setState(() {
+        artifactsDDO = value;
+      }),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          const TabBar(
-            tabs: [
-              Tab(text: 'Attribute'),
-              Tab(text: 'Unit Style'),
-            ],
-          ),
-          if (widget.loadingJson)
-            const Expanded(
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
-            )
-          else
-            Expanded(
-              child: TabBarView(
-                children: [
-                  SingleChildScrollView(
-                    child: displayAttributeArtifacts(),
-                  ),
-                  displayUnitStyleArtifacts(),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  void getBestArtifacts(List<double> subStats, {type = 0, mainStat = 0}) async {
+  Future<Map<int, List>> getBestArtifacts(List<double> subStats,
+      {type = 0, mainStat = 0}) async {
     widget.loadingJson = true;
+    Map<int, List<dynamic>> artifacts = {};
     try {
       final response = await http.get(
         Uri.parse('http://localhost:5000/api/get_bests_artifacts').replace(
@@ -111,6 +107,7 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
           savedArtifacts[mainStat] = artifacts;
         });
         widget.loadingJson = false;
+        return artifacts;
       } else {
         // Handle the error case if needed
         print('Request failed with status: ${response.statusCode}.');
@@ -119,9 +116,11 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
       print('getBestArtifacts: ${e.toString()}');
       print(stacktrace);
     }
+    return {};
   }
 
-  Widget displayAttributeArtifacts() {
+  Widget displayAttributeArtifacts(
+      Map<int, List<dynamic>> artifacts, List<double> minMaxValues) {
     List<DropdownMenuItem> mainStatsItem = [];
     mainStatsItem.add(
       const DropdownMenuItem(
@@ -159,19 +158,29 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
                         artifacts = savedArtifacts[selectedMainStat]!;
                       } else {
                         getBestArtifacts(
-                          [
-                            305,
-                            306,
-                            307,
-                            308,
-                            309,
-                          ],
+                          idsDRF,
                           type: Artifact.artifactTypeStrings.values
                                   .toList()
                                   .indexOf("Attribute") +
                               1,
                           mainStat: selectedMainStat,
-                        );
+                        ).then((value) {
+                          setState(() {
+                            artifactsDRF = value;
+                          });
+                        });
+                        getBestArtifacts(
+                          idsDDO,
+                          type: Artifact.artifactTypeStrings.values
+                                  .toList()
+                                  .indexOf("Attribute") +
+                              1,
+                          mainStat: selectedMainStat,
+                        ).then((value) {
+                          setState(() {
+                            artifactsDDO = value;
+                          });
+                        });
                       }
                     });
                   },
@@ -180,7 +189,7 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
             ),
           ],
         ),
-        createArtifactTables(),
+        createArtifactTables(artifacts, minMaxValues),
       ],
     );
   }
@@ -219,7 +228,8 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
     }
   }
 
-  Widget createArtifactTable(int attribute) {
+  Widget createArtifactTable(Map<int, List<dynamic>> artifacts, int attribute,
+      List<double> minMaxValues) {
     final ArtifactsInfo artifactsInfo = ArtifactsInfo(
       attributes: Artifact.attributeStrings.keys.toList(),
       unitStyles: Artifact.unitStyleStrings.keys.toList(),
@@ -283,8 +293,19 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
                 continue;
               }
               var backgroundColor = Colors.transparent;
-              if (value < 22 && index == 0) {
-                backgroundColor = Colors.red;
+              if (value < minMaxValues[0] && index == 0) {
+                if (value < minMaxValues[0] - minMaxDelta) {
+                  backgroundColor = Colors.red;
+                } else {
+                  backgroundColor = Colors.orange;
+                }
+              }
+              if (value > minMaxValues[1]) {
+                if (value > minMaxValues[1] + minMaxDelta) {
+                  backgroundColor = Colors.green;
+                } else {
+                  backgroundColor = Colors.lightGreen;
+                }
               }
               cells.add(
                 DataCell(
@@ -330,7 +351,8 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
     }
   }
 
-  Widget createArtifactTables() {
+  Widget createArtifactTables(
+      Map<int, List<dynamic>> artifacts, List<double> minMaxValues) {
     try {
       final ArtifactsInfo artifactsInfo = ArtifactsInfo(
         attributes: Artifact.attributeStrings.keys.toList(),
@@ -342,8 +364,8 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
         height: 1000,
         child: GridView.builder(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisExtent: 400,
+            crossAxisCount: 3,
+            mainAxisExtent: 320,
           ),
           itemCount: artifactsInfo.attributes.length,
           itemBuilder: (BuildContext context, int index) {
@@ -351,9 +373,9 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
             return Column(
               children: [
                 displayAttributeIcon(attribute, 32) ?? const SizedBox(),
-                const SizedBox(height: 8),
-                createArtifactTable(attribute),
-                const SizedBox(height: 32),
+                const SizedBox(height: 4),
+                createArtifactTable(artifacts, attribute, minMaxValues),
+                const SizedBox(height: 16),
               ],
             );
           },
@@ -364,5 +386,60 @@ class _ArtifactDisplayState extends State<ArtifactDisplay> {
       print(stacktrace);
       return const SizedBox();
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        children: [
+          const TabBar(
+            tabs: [
+              Tab(text: 'Attribute'),
+              Tab(text: 'Unit Style'),
+            ],
+          ),
+          if (widget.loadingJson)
+            const Expanded(
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else
+            Expanded(
+              child: TabBarView(
+                children: [
+                  SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const Text(
+                          "Damage Received From",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        displayAttributeArtifacts(
+                            artifactsDRF, minMaxValues['DRF']!),
+                        const Text(
+                          "Damage Dealt On",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        displayAttributeArtifacts(
+                            artifactsDDO, minMaxValues['DDO']!),
+                      ],
+                    ),
+                  ),
+                  displayUnitStyleArtifacts(),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
